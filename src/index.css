@@ -1,0 +1,202 @@
+/* === Base Reset === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: "Poppins", sans-serif;
+  background-color: #f5f6fa;
+  color: #333;
+}
+
+/* === App Layout Wrapper === */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* === Top Navigation Bar === */
+.topnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 0.75rem 2rem;
+  z-index: 100;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.topnav .logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.topnav nav ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.topnav nav ul li a {
+  text-decoration: none;
+  color: #4b5563;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.topnav nav ul li a:hover {
+  background-color: #f3f4f6;
+  color: #1e3a8a;
+}
+
+.topnav nav ul li a.active {
+  color: #2563eb;
+  font-weight: 600;
+  border-bottom: 2px solid #2563eb;
+}
+
+/* === Main Content Region (Below Topnav) === */
+.content-region {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+/* === Sidebar === */
+.sidebar {
+  width: 240px;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.sidebar .logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar nav ul li a {
+  display: block;
+  text-decoration: none;
+  color: #4b5563;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar nav ul li a:hover {
+  background-color: #f3f4f6;
+  color: #1e3a8a;
+}
+
+.sidebar nav ul li a.active {
+  background-color: #2563eb;
+  color: white;
+}
+
+/* === Main Page Content === */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background-color: #f9fafb;
+}
+
+.main-content h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+  /* Sidebar collapses on mobile */
+  .sidebar {
+    position: fixed;
+    left: -240px;
+    top: 64px; /* below topnav */
+    height: calc(100% - 64px);
+    z-index: 200;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  /* Optional overlay for sidebar */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 150;
+  }
+
+  .main-content {
+    padding: 1.5rem;
+  }
+
+  .topnav {
+    flex-wrap: wrap;
+    padding: 1rem;
+  }
+
+  .topnav nav ul {
+    flex-direction: column;
+    width: 100%;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+    display: none;
+  }
+
+  .topnav.open nav ul {
+    display: flex;
+  }
+
+  .topnav nav ul li {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* === Scrollbar Styling === */
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
