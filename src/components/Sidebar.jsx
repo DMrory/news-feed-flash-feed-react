@@ -1,33 +1,32 @@
-import { Link, Routes, Route } from 'react-router-dom';
-import Home from '../pages/Home';
-import About from '../pages/About';
-import News from '../pages/News';
-import Politics from '../pages/Politics';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import "./Sidebar.css";
 
 export default function Sidebar() {
-  return (
-    <div className="sidebar-layout">
-      <aside className="sidebar">
-        <h1 className="logo">Flash Feed</h1>
-        <nav>
-          <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/about">About</Link></li>
-            <li><Link to="/news">News</Link></li>
-            <li><Link to="/politics">Politics</Link></li>
-          </ul>
-        </nav>
-      </aside>
+  const [isOpen, setIsOpen] = useState(false);
+  const categories = ["World", "Politics", "Business", "Tech", "Sports", "Entertainment"];
 
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/politics" element={<Politics />} />
-        </Routes>
-      </main>
-    </div>
+  return (
+    <>
+     
+      <button className="menu-toggle" onClick={() => setIsOpen(!isOpen)}>
+        ☰
+      </button>
+
+      <aside className={`sidebar ${isOpen ? "open" : ""}`}>
+        <h2 className="sidebar-title">Categories</h2>
+        <ul className="sidebar-list">
+          {categories.map((cat) => (
+            <li key={cat} onClick={() => setIsOpen(false)}>
+              <Link to={`/category/${cat.toLowerCase()}`}>{cat}</Link>
+            </li>
+          ))}
+        </ul>
+        <div className="sidebar-footer">
+          <Link to="/about" onClick={() => setIsOpen(false)}>About</Link>
+        </div>
+      </aside>
+    </>
   );
 }
 
