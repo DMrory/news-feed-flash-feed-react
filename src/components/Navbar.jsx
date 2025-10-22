@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
@@ -7,6 +7,7 @@ export default function Navbar({ onSearch, onCategorySelect }) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("technology");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [theme, setTheme] = useState("dark");
   const navigate = useNavigate();
 
   const categories = [
@@ -18,12 +19,27 @@ export default function Navbar({ onSearch, onCategorySelect }) {
     "science",
   ];
 
+  // 🌗 Load saved theme from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("theme") || "dark";
+    setTheme(saved);
+    document.body.classList.toggle("dark-theme", saved === "dark");
+  }, []);
+
+  // 🌗 Toggle light/dark theme
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.body.classList.toggle("dark-theme", newTheme === "dark");
+    localStorage.setItem("theme", newTheme);
+  };
+
   // 🔍 Handle search
   const handleSearch = (e) => {
     e.preventDefault();
     if (query.trim()) {
       onSearch(query.trim());
-      navigate("/"); // Redirect to home for search results
+      navigate("/");
       setIsMenuOpen(false);
     }
   };
@@ -32,19 +48,28 @@ export default function Navbar({ onSearch, onCategorySelect }) {
   const handleCategoryClick = (category) => {
     setActiveCategory(category);
     onCategorySelect(category);
-    navigate(`/category/${category}`); // ✅ Always go to valid /category/:name
+    navigate(`/category/${category}`);
     setIsMenuOpen(false);
   };
 
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        {/* Logo / Home Link */}
-        <Link to="/" className="navbar-logo" onClick={() => setActiveCategory("technology")}>
+        {/* Logo */}
+        <Link
+          to="/"
+          className="navbar-logo"
+          onClick={() => setActiveCategory("technology")}
+        >
           🗞️ NewsFeed
         </Link>
 
-        {/* Mobile Menu Toggle */}
+        {/* Theme toggle button */}
+        <button className="theme-toggle" onClick={toggleTheme}>
+          {theme === "dark" ? "🌞" : "🌙"}
+        </button>
+
+        {/* Mobile Menu */}
         <div
           className={`menu-toggle ${isMenuOpen ? "open" : ""}`}
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -54,7 +79,7 @@ export default function Navbar({ onSearch, onCategorySelect }) {
           <span></span>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Nav Links */}
         <div className={`nav-links ${isMenuOpen ? "show" : ""}`}>
           <ul className="category-list">
             {categories.map((category) => (
@@ -68,7 +93,7 @@ export default function Navbar({ onSearch, onCategorySelect }) {
             ))}
           </ul>
 
-          {/* Search Form */}
+          {/* Search */}
           <form className="search-form" onSubmit={handleSearch}>
             <input
               type="text"
@@ -84,7 +109,6 @@ export default function Navbar({ onSearch, onCategorySelect }) {
   );
 }
 
-// ✅ PropTypes validation
 Navbar.propTypes = {
   onSearch: PropTypes.func.isRequired,
   onCategorySelect: PropTypes.func.isRequired,

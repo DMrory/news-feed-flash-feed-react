@@ -5,13 +5,13 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import { generateNews } from "../utils/generateNews";
 import "./Home.css";
 
-export default function Home() {
+export default function Home({ searchQuery, category: initialCategory }) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [category, setCategory] = useState("technology");
+  const [category, setCategory] = useState(initialCategory || "technology");
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false); // 🌟 animation flag
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
   const API_URL = "https://newsapi.org/v2/top-headlines";
@@ -26,13 +26,16 @@ export default function Home() {
     "world",
   ];
 
-  // 📰 Fetch news with fallback + timestamp
-  const fetchNews = useCallback(
+  // 📰 Fetch category-based news
+  const fetchCategoryNews = useCallback(
     async (selectedCategory, showRefresh = false) => {
       try {
         if (showRefresh) setIsRefreshing(true);
-        setLoading(!showRefresh); // Don't show skeleton on auto-refresh
+        setLoading(!showRefresh);
         setError(null);
+
+        // Clear old articles before fetching fresh news
+        if (!showRefresh) setArticles([]);
 
         let liveArticles = [];
 
@@ -43,6 +46,7 @@ export default function Home() {
               category: selectedCategory,
               pageSize: 20,
               apiKey: NEWS_API_KEY,
+              t: Date.now(), // 🔹 cache-busting
             },
           });
 
@@ -52,10 +56,7 @@ export default function Home() {
               .map((a, i) => ({
                 id: a.url || i,
                 title: a.title || "Untitled Article",
-                content:
-                  a.description ||
-                  a.content ||
-                  "Click to read the full story.",
+                content: a.description || a.content || "Click to read the full story.",
                 category:
                   selectedCategory.charAt(0).toUpperCase() +
                   selectedCategory.slice(1),
@@ -70,14 +71,14 @@ export default function Home() {
           }
         }
 
+        // Fallback mock news if API fails
         if (liveArticles.length === 0) {
-          console.warn("⚠️ Using mock data as fallback...");
           liveArticles = Array.from({ length: 8 }, generateNews).filter(
             (n) => n.category.toLowerCase() === selectedCategory.toLowerCase()
           );
         }
 
-        // Remove duplicates
+        // Remove duplicates & shuffle
         const seen = new Set();
         const unique = liveArticles.filter((a) => {
           if (seen.has(a.title)) return false;
@@ -85,10 +86,8 @@ export default function Home() {
           return true;
         });
 
-        const shuffled = unique.sort(() => 0.5 - Math.random());
-        setArticles(shuffled.slice(0, 8));
+        setArticles(unique.sort(() => 0.5 - Math.random()).slice(0, 8));
 
-        // 🕒 Update timestamp
         setLastUpdated(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -98,60 +97,119 @@ export default function Home() {
       } catch (err) {
         console.error("❌ News fetch failed:", err);
         setError("Unable to load live news. Showing sample headlines instead.");
-
         const mock = Array.from({ length: 8 }, generateNews);
         setArticles(mock);
-
-        setLastUpdated(
-          new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        );
       } finally {
         setLoading(false);
-        setTimeout(() => setIsRefreshing(false), 1000); // ⏳ end pulse after 1s
+        setTimeout(() => setIsRefreshing(false), 1000);
       }
     },
     [NEWS_API_KEY]
   );
 
-  // 🔁 Initial + on category change
+  // 🔍 Fetch search results when query changes
   useEffect(() => {
-    fetchNews(category);
-  }, [category, fetchNews]);
+    if (!searchQuery) return;
 
-  // ⏰ Auto-refresh every 5 minutes
+    const fetchSearchResults = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { data } = await axios.get("https://newsapi.org/v2/everything", {
+          params: {
+            q: searchQuery,
+            sortBy: "publishedAt",
+            language: "en",
+            pageSize: 20,
+            apiKey: NEWS_API_KEY,
+            t: Date.now(),
+          },
+        });
+
+        if (data.status === "ok" && data.articles.length > 0) {
+          const results = data.articles.map((a, i) => ({
+            id: a.url || i,
+            title: a.title || "Untitled Article",
+            content: a.description || a.content || "Click to read full story.",
+            category: "Search",
+            image: a.urlToImage,
+            time: new Date(a.publishedAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            source: a.source?.name || "Unknown Source",
+            url: a.url || "#",
+          }));
+
+          setArticles(results);
+        } else {
+          setArticles([]);
+          setError("No articles found for your search.");
+        }
+      } catch (err) {
+        console.error("❌ Search failed:", err);
+        setError("Unable to fetch search results. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSearchResults();
+  }, [searchQuery, NEWS_API_KEY]);
+
+  // 🔁 Fetch category news if no search active
   useEffect(() => {
+    if (!searchQuery) {
+      fetchCategoryNews(category);
+    }
+  }, [category, searchQuery, fetchCategoryNews]);
+
+  // ⏰ Auto-refresh every 5 minutes (category mode only)
+  useEffect(() => {
+    if (searchQuery) return;
     const interval = setInterval(() => {
-      fetchNews(category, true);
-    }, 5 * 60 * 1000); // 5 minutes
+      fetchCategoryNews(category, true);
+    }, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [category, fetchNews]);
+  }, [category, searchQuery, fetchCategoryNews]);
+
+  // 🗑️ Clear news function
+  const clearNews = () => {
+    setArticles([]);
+    setLastUpdated(null);
+  };
 
   return (
     <div className="home-container">
-      {/* 🧭 Category Bar */}
+      {/* 🧭 Header Bar */}
       <div className="category-bar">
         <h1 className="category-bar-title">
-          📰 {category.charAt(0).toUpperCase() + category.slice(1)} Headlines
+          {searchQuery
+            ? `🔍 Search results for "${searchQuery}"`
+            : `📰 ${category.charAt(0).toUpperCase() + category.slice(1)} Headlines`}
         </h1>
 
-        <div className="category-buttons">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={cat === category ? "active" : ""}
-            >
-              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+        {!searchQuery && (
+          <div className="category-buttons">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={cat === category ? "active" : ""}
+              >
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </button>
+            ))}
+            <button onClick={clearNews} className="clear-btn">
+              🗑️ Clear News
             </button>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* 🕒 Timestamp + Pulse */}
-      {lastUpdated && (
+      {/* 🕒 Timestamp */}
+      {!searchQuery && lastUpdated && (
         <p
           className={`last-updated ${isRefreshing ? "pulse" : ""}`}
           title="Auto-refreshes every 5 minutes"
@@ -166,7 +224,7 @@ export default function Home() {
       ) : error ? (
         <p className="status-text warning">{error}</p>
       ) : articles.length === 0 ? (
-        <p className="status-text">No articles found for this category.</p>
+        <p className="status-text">No articles found.</p>
       ) : (
         <div className="news-grid">
           {articles.map((news) => (
