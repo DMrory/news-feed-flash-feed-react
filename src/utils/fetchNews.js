@@ -3,7 +3,7 @@ import { sampleNews } from "../data/sampleNews"
 
 const API_URL = "https://newsapi.org/v2/top-headlines?country=us&pageSize=5";
 
-export async function fetchMixedNews() {
+export async function fetchNews() {
   try {
     const res = await fetch(`${API_URL}&apiKey=${import.meta.env.VITE_NEWS_API_KEY}`);
     const data = await res.json();

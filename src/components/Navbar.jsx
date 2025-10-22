@@ -1,93 +1,91 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import PropTypes from "prop-types";
+import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
 export default function Navbar({ onSearch, onCategorySelect }) {
-  const [time, setTime] = useState(new Date().toLocaleTimeString());
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("trending");
+  const [activeCategory, setActiveCategory] = useState("technology");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const categories = [
+    "technology",
+    "business",
+    "sports",
+    "entertainment",
+    "health",
+    "science",
+  ];
 
-  const handleSearchChange = (e) => {
-    setQuery(e.target.value);
-  };
-
-  const handleSearchSubmit = () => {
-    if (query.trim() !== "") {
+  // 🔍 Handle search
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (query.trim()) {
       onSearch(query.trim());
+      navigate("/"); // Redirect to home for search results
+      setIsMenuOpen(false);
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSearchSubmit();
-  };
-
-  const handleCategoryChange = (e) => {
-    const selected = e.target.value;
-    setCategory(selected);
-    onCategorySelect(selected);
+  // 🗂️ Handle category click
+  const handleCategoryClick = (category) => {
+    setActiveCategory(category);
+    onCategorySelect(category);
+    navigate(`/category/${category}`); // ✅ Always go to valid /category/:name
+    setIsMenuOpen(false);
   };
 
   return (
     <nav className="navbar">
-      <div className="navbar-left">
-        <h1 className="logo">📰 FlashFeed</h1>
-      </div>
+      <div className="navbar-container">
+        {/* Logo / Home Link */}
+        <Link to="/" className="navbar-logo" onClick={() => setActiveCategory("technology")}>
+          🗞️ NewsFeed
+        </Link>
 
-      
-      <div className="navbar-center">
-        <select
-          className="category-select"
-          value={category}
-          onChange={handleCategoryChange}
+        {/* Mobile Menu Toggle */}
+        <div
+          className={`menu-toggle ${isMenuOpen ? "open" : ""}`}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
-          <option value="trending"> Trending</option>
-          <option value="world"> World</option>
-          <option value="business">Business</option>
-          <option value="technology">Technology</option>
-          <option value="sports"> Sports</option>
-          <option value="entertainment">Entertainment</option>
-          <option value="health">Health</option>
-          <option value="science"> Science</option>
-        </select>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
 
-        <input
-          type="text"
-          placeholder="Search latest headlines..."
-          value={query}
-          onChange={handleSearchChange}
-          onKeyDown={handleKeyDown}
-          className="search-input"
-        />
+        {/* Navigation Menu */}
+        <div className={`nav-links ${isMenuOpen ? "show" : ""}`}>
+          <ul className="category-list">
+            {categories.map((category) => (
+              <li
+                key={category}
+                className={activeCategory === category ? "active" : ""}
+                onClick={() => handleCategoryClick(category)}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </li>
+            ))}
+          </ul>
 
-        <button className="send-btn" onClick={handleSearchSubmit}>
-           Send
-        </button>
-      </div>
-
-     
-      <div className="navbar-right">
-        <span className="time">{time}</span>
-        <button className="refresh-btn" onClick={() => window.location.reload()}>
-          ⟳ Refresh
-        </button>
-        <button
-          className="clear-btn"
-          onClick={() => {
-            localStorage.removeItem("flashfeed-news");
-            window.location.reload();
-          }}
-        >
-        
-        </button>
+          {/* Search Form */}
+          <form className="search-form" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="Search news..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button type="submit">Search</button>
+          </form>
+        </div>
       </div>
     </nav>
   );
 }
 
-
+// ✅ PropTypes validation
+Navbar.propTypes = {
+  onSearch: PropTypes.func.isRequired,
+  onCategorySelect: PropTypes.func.isRequired,
+};

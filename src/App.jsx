@@ -1,25 +1,52 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useState, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import Category from "./pages/Category";
 import About from "./pages/About";
-import "./index.css";
+import Loader from "./components/Loader";
+import "./App.css";
 
 export default function App() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("technology");
+
+  const handleSearch = (query) => setSearchQuery(query.trim());
+  const handleCategorySelect = (category) => setSelectedCategory(category);
+
   return (
-      <div className="app flex">
-        <Sidebar />
-        <div className="main-content flex-1">
-          <Navbar />
+    <>
+      <Navbar onSearch={handleSearch} onCategorySelect={handleCategorySelect} />
+
+      <main className="app-main">
+        <Suspense fallback={<Loader />}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route
+              path="/"
+              element={<Home searchQuery={searchQuery} category={selectedCategory} />}
+            />
             <Route path="/category/:name" element={<Category />} />
             <Route path="/about" element={<About />} />
+            <Route path="/us-news" element={<Home category="general" />} />
+            <Route path="/weather" element={<Loader />} />
+            <Route path="/investigations" element={<Category name="investigations" />} />
+
+            <Route
+              path="*"
+              element={
+                <div className="not-found">
+                  <h1>404</h1>
+                  <p>Page not found.</p>
+                  <a href="/" className="back-home">
+                    ← Go Back Home
+                  </a>
+                </div>
+              }
+            />
           </Routes>
-        </div>
-      </div>
+        </Suspense>
+      </main>
+    </>
   );
 }
 
